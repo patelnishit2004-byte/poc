@@ -51,3 +51,37 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError({"message": "Invalid credentials"})
 
         return {"message": "Login successful!", "user_id": user.user_id}
+
+
+# ------------------ PROFILE UPDATE SERIALIZER ------------------
+class ProfileSerializer(serializers.ModelSerializer):
+    user_id = serializers.CharField(source="user.user_id", read_only=True)
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+    phone = serializers.CharField(source="user.phone", read_only=True)
+
+    class Meta:
+        model = Profile
+        fields = [
+            "user_id", "first_name", "last_name", "email", "phone",
+            "address", "date_of_birth", "bio", "profile_picture"
+        ]
+
+
+    def update(self, instance, validated_data):
+        # Extract user data
+        user_data = validated_data.pop('user', {})
+
+        # Update Profile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update User fields
+        user = instance.user
+        for attr, value in user_data.items():
+            setattr(user, attr, value)
+        user.save()
+
+        return instance
